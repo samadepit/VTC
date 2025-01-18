@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import Cookies from 'js-cookie';
+
 
 
 export const ExpenseForm = () => {
@@ -82,6 +84,13 @@ export const ExpenseForm = () => {
         setImageUrl(null);
         setIsImageVerified(false);
         navigate("/dashboard");
+        Cookies.remove('token');
+        const token = Cookies.get("token");
+
+        if (!token) {
+          navigate("/login");
+          toast.success("veuillez vous reconnecter encore SVP !");
+        }
       } else {
         toast.error(result.message || "Erreur lors de la validation de la recette");
       }
@@ -160,36 +169,36 @@ export const ExpenseForm = () => {
       </div>
       {isImageVerified && userData && (
         <>
-        <div>
-        <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-2">
-          Nom
-        </label>
-        <input
-          id="nom"
-          name="nom"
-          type="text"
-          value={formData.category}
-          // onChange={handleChange}
-          className="form-input"
-          placeholder="Votre nom"
-          readOnly
-        />
-      </div>
-      <div>
-        <label htmlFor="prenom" className="block text-sm font-medium text-gray-700 mb-2">
-          Prenom
-        </label>
-        <input
-          id="prenom"
-          name="prenom"
-          type="text"
-          value={formData.category}
-          // onChange={handleChange}
-          className="form-input"
-          placeholder="Votre prenom"
-          readOnly
-        />
-      </div>
+          <div>
+            <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-2">
+              Nom
+            </label>
+            <input
+              id="nom"
+              name="nom"
+              type="text"
+              value={formData.category}
+              // onChange={handleChange}
+              className="form-input"
+              placeholder="Votre nom"
+              readOnly
+            />
+          </div>
+          <div>
+            <label htmlFor="prenom" className="block text-sm font-medium text-gray-700 mb-2">
+              Prenom
+            </label>
+            <input
+              id="prenom"
+              name="prenom"
+              type="text"
+              value={formData.category}
+              // onChange={handleChange}
+              className="form-input"
+              placeholder="Votre prenom"
+              readOnly
+            />
+          </div>
         </>
       )}
       <button type="submit" className="btn-primary w-full">

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Webcam from "react-webcam";
 import { isMobile } from 'react-device-detect';
+import Cookies from 'js-cookie';
+
 
 
 export const RegistrationForm = () => {
@@ -61,6 +63,13 @@ export const RegistrationForm = () => {
       // });
       toast.success("Votre compte a été créé avec succès");
       navigate("/dashboard");
+      Cookies.remove('token');
+      const token = Cookies.get("token");
+
+      if (!token) {
+        navigate("/login");
+        toast.success("veuillez vous reconnecter encore SVP !");
+      }
     } else if (data.status == 500) {
       // toast({
       //   variant: "destructive",
@@ -170,52 +179,14 @@ export const RegistrationForm = () => {
         </>
       ) : (
         <>
-          {/* <label className="block text-sm font-medium text-gray-700">Photo</label>
-          <div className="mt-1 flex flex-col items-center">
-            {photo ? (
-              <img
-                src={url}
-                alt="Votre photo"
-                className="w-32 h-32 rounded-full object-cover border border-gray-300"
-              />
-            ) : (
-              <div className="w-32 h-32 flex items-center justify-center rounded-full border border-gray-300 bg-gray-50 text-gray-400">
-                Aucune photo
-              </div>
-            )}
-
-            <div className="mt-4 flex gap-2">
-              <label
-                htmlFor="file-input"
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 cursor-pointer"
-              >
-                Choisir un fichier
-              </label>
-              <input
-                id="file-input"
-                type="file"
-                accept="image/*"
-                className="hidden"
-              // onChange={handleFileChange}
-              />
-
-              <button
-                type="button"
-                onClick={() => setIsCameraOpen(true)}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg shadow hover:bg-green-600"
-              >
-                Prendre une photo
-              </button>
-            </div>
-          </div> */}
           <label htmlFor="photo" className="block text-sm font-medium text-gray-700 mb-0">
             Photo
           </label>
           <div className="form-input flex items-center border rounded-lg p-1 space-x-2">
-            <button 
-            type="button"
-            className="px-2 py-1 bg-gray-400 text-white rounded-lg shadow hover:bg-gray-500 cursor-pointer"
-            onClick={() => setIsCameraOpen(true)}
+            <button
+              type="button"
+              className="px-2 py-1 bg-gray-400 text-white rounded-lg shadow hover:bg-gray-500 cursor-pointer"
+              onClick={() => setIsCameraOpen(true)}
             >
               Prendre une photo
             </button>

@@ -45,6 +45,8 @@ print(f'Running on {device}')
 def generate_emb(file):
     try:
         img = Image.open(file)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
         x_aligned, prob = mtcnn(img, return_prob=True)
         if prob is None or len(prob) != 1 or prob[0] < 0.9:
             print("Face detection failed or low confidence.")
