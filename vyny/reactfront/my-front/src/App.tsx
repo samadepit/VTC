@@ -27,10 +27,11 @@ const App = () => (
               <Route path="/login" element={<Login />} />
             </Route>
             {/* Protéger les routes pour les utilisateurs connectés */}
-            <Route path="/" element={<ProtectedRoute />}>
-              <Route path="register" element={<Register />} />
-              <Route path="dashboard" element={<Dashboard />} />
-            </Route>
+            {/* <Route path="/" element={<ProtectedRoute />}>
+              
+            </Route> */}
+            <Route path="register" element={<Register />} />
+            <Route path="dashboard" element={<Dashboard />} />
 
           </Routes>
         </div>

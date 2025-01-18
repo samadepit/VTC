@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import Webcam from "react-webcam";
+import { isMobile } from 'react-device-detect';
 
 
 export const RegistrationForm = () => {
@@ -9,8 +11,31 @@ export const RegistrationForm = () => {
   const [prenom, setPrenom] = useState("");
   const [date_naissance, setDate_naissance] = useState("");
   const [sexe, setSexe] = useState("");
-  const [photo, setPhoto] = useState("");
+  const [photoName, setPhotoName] = useState("")
+  const [url, setUrl] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
   const navigate = useNavigate();
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const webcamRef = useRef(null);
+
+  // Convertir Base64 en fichier avant de l'envoyer à `setPhoto`
+  const base64ToFile = (base64String, fileName) => {
+    const base64Data = base64String.split(",")[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: "image/png" });
+    return new File([blob], fileName, { type: "image/png" });
+  };
+
+  const capturePhoto = () => {
+    const capturedImage = webcamRef.current.getScreenshot(); // Capture l'image de la webcam
+    const imageFile = base64ToFile(capturedImage, "image.png");
+    setUrl(capturedImage);
+    setPhoto(imageFile);
+    setPhotoName(imageFile.name)
+    setIsCameraOpen(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +53,7 @@ export const RegistrationForm = () => {
     });
     const user = await data.json();
     console.log(data);
-    
+
     if (data.ok) {
       // toast({
       //   title: "Inscription réussie",
@@ -53,9 +78,16 @@ export const RegistrationForm = () => {
     }
   };
 
-  console.log(nom,prenom,date_naissance,sexe,photo)
+  console.log(nom, prenom, date_naissance, sexe, photo)
   return (
     <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
+      <div>
+        {isMobile ? (
+          <p>Vous êtes sur un appareil mobile.</p>
+        ) : (
+          <p>Vous êtes sur un ordinateur.</p>
+        )}
+      </div>
       <div>
         <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-2">
           Nom
@@ -118,20 +150,115 @@ export const RegistrationForm = () => {
           <option value="A">Autre</option>
         </select>
       </div>
-      <div>
-        <label htmlFor="photo" className="block text-sm font-medium text-gray-700 mb-2">
-          Photo
-        </label>
-        <input
-          id="photo"
-          name="photo"
-          type="file"
-          accept="image/*"
-          onChange={(e) => setPhoto(e.target.files?.[0])}
-          className="form-input"
-          required
-        />
-      </div>
+      {isMobile ? (
+        <>
+          <div>
+            <label htmlFor="photo" className="block text-sm font-medium text-gray-700 mb-2">
+              Photo
+            </label>
+            <input
+              id="photo"
+              name="photo"
+              type="file"
+              accept="image/*"
+              capture="user"
+              onChange={(e) => setPhoto(e.target.files?.[0])}
+              className="form-input"
+              required
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* <label className="block text-sm font-medium text-gray-700">Photo</label>
+          <div className="mt-1 flex flex-col items-center">
+            {photo ? (
+              <img
+                src={url}
+                alt="Votre photo"
+                className="w-32 h-32 rounded-full object-cover border border-gray-300"
+              />
+            ) : (
+              <div className="w-32 h-32 flex items-center justify-center rounded-full border border-gray-300 bg-gray-50 text-gray-400">
+                Aucune photo
+              </div>
+            )}
+
+            <div className="mt-4 flex gap-2">
+              <label
+                htmlFor="file-input"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 cursor-pointer"
+              >
+                Choisir un fichier
+              </label>
+              <input
+                id="file-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+              // onChange={handleFileChange}
+              />
+
+              <button
+                type="button"
+                onClick={() => setIsCameraOpen(true)}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg shadow hover:bg-green-600"
+              >
+                Prendre une photo
+              </button>
+            </div>
+          </div> */}
+          <label htmlFor="photo" className="block text-sm font-medium text-gray-700 mb-0">
+            Photo
+          </label>
+          <div className="form-input flex items-center border rounded-lg p-1 space-x-2">
+            <button 
+            type="button"
+            className="px-2 py-1 bg-gray-400 text-white rounded-lg shadow hover:bg-gray-500 cursor-pointer"
+            onClick={() => setIsCameraOpen(true)}
+            >
+              Prendre une photo
+            </button>
+            {photo ? (
+              <>
+                <img src={url} alt="Photo" className="w-9 h-9 object-cover rounded" />
+                <span className="text-sm text-gray-600">{photoName}</span>
+              </>
+            ) : (
+              <span className="text-gray-500">Aucune photo ...</span>
+            )}
+          </div>
+
+          {isCameraOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <div className="bg-white p-4 rounded-lg shadow-lg">
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  screenshotFormat="image/png"
+                  className="w-full rounded-lg"
+                />
+                <div className="mt-4 flex justify-between">
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
+                  >
+                    Capturer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraOpen(false)}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
       <button type="submit" className="btn-primary w-full">
         S'inscrire
       </button>
