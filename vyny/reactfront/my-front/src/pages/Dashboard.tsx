@@ -67,22 +67,13 @@ const Dashboard = () => {
                 Ajouter mes informations
               </Button>
             </DialogTrigger>
-            {/* <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Mes Informations</DialogTitle>
-              </DialogHeader>
-              <div className="p-4">
-                <p className="text-gray-500">
-                  Formulaire d'informations personnelles à implémenter
-                </p>
-              </div>
-            </DialogContent> */}
+
           </Dialog>
         </div>
 
-        <div className="bg-white rounded-lg shadow">
+        {/* <div className="bg-white rounded-lg shadow">
           <DriverRecipes driverId="temp-id" recipes={mockRecipes} />
-        </div>
+        </div> */}
       </div>
     </div>
   );

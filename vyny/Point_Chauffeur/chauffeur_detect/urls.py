@@ -13,4 +13,10 @@ urlpatterns = [
     path('hello_world/', views.hello_world),
     path('login/', views.api_login),
     path('logout/', views.api_logout),
+    path('all-chauffeur/', views.all_chauffeur),
+    path('all-recette/', views.all_recette),
+    path('delete-chauffeur/<int:id>/', views.delete_chauffeur),
+    path('update-chauffeur/<int:id>/', views.update_chauffeur),
+    path('update-recette/<int:id>/', views.update_recette),
+    path('delete-recette/<int:id>/', views.delete_recette),
 ]

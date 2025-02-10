@@ -223,36 +223,30 @@ def add_Point_recette(request):
 #     return Response({"error": "Aucune correspondance trouvée"}, status=404)
 
 def verification_chauffeur(request):
-    # Vérifiez si une image est envoyée
     if 'image' not in request.FILES:
         return Response({'error': 'Aucune image fournie'}, status=status.HTTP_400_BAD_REQUEST)
 
-    image_file = request.FILES['image']  # Récupérer l'image du fichier envoyé
-    filename = f"{uuid.uuid4()}.jpg"  # Générer un nom de fichier unique
+    image_file = request.FILES['image']  
+    filename = f"{uuid.uuid4()}.jpg"  
     file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
     try:
-        # Enregistrer l'image temporairement
         with open(file_path, 'wb') as f:
             for chunk in image_file.chunks():
                 f.write(chunk)
 
-        # Étape 2 : Générer l'embedding pour l'image envoyée
         embedding = generate_emb(file_path)
-        os.remove(file_path)  # Supprimer le fichier temporaire
-
+        os.remove(file_path)  
         if embedding is None:
             return Response({"error": "Impossible d'extraire un visage de l'image"}, status=400)
 
-        # Étape 3 : Charger les embeddings des chauffeurs
-        dataset = EmbeddingsDataset()  # Assurez-vous que cette classe charge correctement les embeddings
+        dataset = EmbeddingsDataset() 
         if not dataset.embeddings:
             return Response({"error": "Le dataset des chauffeurs est vide"}, status=500)
 
-        # Comparer l'embedding généré avec les embeddings du dataset
         score, idx = get_similarity(embedding, dataset.embeddings)
 
-        if score is not None and score >= 0.9:  # Seuil de similarité : 90 %
+        if score is not None and score >= 0.9: 
             try:
                 chauffeur_id = dataset.chauffeur_ids[idx]
                 chauffeur = Chauffeurs.objects.get(id=chauffeur_id)
@@ -305,3 +299,59 @@ def api_logout(request):
 
     logout(request)
     return Response({"success": ("Successfully logged out.")},status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def all_chauffeur(request):
+    all_chauffeur = Chauffeurs.objects.all()
+    serializers = ChauffeurSerializer(all_chauffeur,many=True)
+    return Response(serializers.data)
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+def delete_chauffeur(request, id):
+    try:
+        user_recu = Chauffeurs.objects.get(id=id)
+        user_recu.delete()
+        # return HttpResponse(status=204)
+        return Response({"user delete success!"}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': f"Impossible de delete chauffeur : {str(e)}"}, status=404)
+
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def update_chauffeur(request, id):
+    user_recu = Chauffeurs.objects.get(id=id)
+    serializer = ChauffeurSerializer(instance=user_recu, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"SUCCESS": "UPDATE SUCCESS !"})
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def all_recette(request):
+    all_chauffeur = Point_Recette.objects.all()
+    serializers = PointRecetteSerializer(all_chauffeur,many=True)
+    return Response(serializers.data)
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+def delete_recette(request, id):
+    try:
+        recette_recu = Point_Recette.objects.get(id=id)
+        recette_recu.delete()
+        # return HttpResponse(status=204)
+        return Response({"recette delete success!"}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': f"Impossible de delete chauffeur : {str(e)}"}, status=404)
+    
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def update_recette(request, id):
+    recette_recu = Point_Recette.objects.get(id=id)
+    serializerRecette = PointRecetteSerializer(instance=recette_recu, data=request.data, partial=True)
+    if serializerRecette.is_valid():
+        serializerRecette.save()
+        return Response({"SUCCESS": "UPDATE SUCCESS !"})
+    else:
+        return Response(serializerRecette.errors, status=status.HTTP_400_BAD_REQUEST)

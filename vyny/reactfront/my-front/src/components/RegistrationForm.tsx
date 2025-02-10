@@ -68,7 +68,7 @@ export const RegistrationForm = () => {
 
       if (!token) {
         navigate("/login");
-        toast.success("veuillez vous reconnecter encore SVP !");
+        toast.success("Compte créer avec success ! veuillez vous reconnecter encore SVP !");
       }
     } else if (data.status == 500) {
       // toast({

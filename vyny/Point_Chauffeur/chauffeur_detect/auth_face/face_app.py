@@ -63,14 +63,34 @@ def get_similarity(source, target_array):
         print("Target array is empty.")
         return None, None
     try:
-        img = Image.open(source)
-        x_aligned, prob = mtcnn(img, return_prob=True)
-        if prob is None or len(prob) != 1 or prob[0] < 0.9:
-            print("Face detection failed or low confidence.")
-            return None, None
-        e = resnet(torch.Tensor(x_aligned[0]).unsqueeze(0).to(device)).detach().cpu().numpy()
-        e_normalized = e / np.linalg.norm(e)
-        scores = cosine_similarity(e_normalized, target_array)
+        # img = Image.open(source)
+        # x_aligned, prob = mtcnn(img, return_prob=True)
+        # if prob is None or len(prob) != 1 or prob[0] < 0.9:
+        #     print("Face detection failed or low confidence.")
+        #     return None, None
+        # e = resnet(torch.Tensor(x_aligned[0]).unsqueeze(0).to(device)).detach().cpu().numpy()
+        # e_normalized = e / np.linalg.norm(e)
+
+        # Convertir source_embedding en tableau NumPy si c'est une liste
+        if isinstance(source, list):
+            source = np.array(source)
+
+        # Convertir target_array en tableau NumPy si c'est une liste
+        if isinstance(target_array, list):
+            target_array = np.array(target_array)
+        # Vérifier et ajuster les dimensions de source_embedding
+        if source.ndim > 1:
+            source = np.squeeze(source)  # Convertir en 1D
+
+        # Vérifier et ajuster les dimensions de target_array
+        if target_array.ndim > 2:
+            target_array = np.squeeze(target_array)  # Convertir en 2D
+
+        # Vérifier que l'embedding source est normalisé
+        source_embedding_normalized = source / np.linalg.norm(source)
+        # Calculer la similarité cosinus entre l'embedding source et les embeddings cibles
+        scores = cosine_similarity([source_embedding_normalized], target_array)
+
         _scores, _idx = torch.tensor(scores).topk(1)
         score = _scores.item()
         idx = _idx.item()
