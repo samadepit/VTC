@@ -27,6 +27,8 @@ from django.contrib.auth import login, logout
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.permissions import IsAuthenticated , AllowAny
 from rest_framework.authentication import TokenAuthentication
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 @api_view(['GET'])
@@ -123,20 +125,27 @@ def add_chauffeur(request):
         if not image_file:
             return Response({"error": "Aucune image envoyée"}, status=400)
 
-        # Sauvegarder temporairement l'image
         filename = str(uuid.uuid4())
         temp_file_path = os.path.join(settings.MEDIA_ROOT, filename)
         with open(temp_file_path, 'wb') as temp_file:
             for chunk in image_file.chunks():
                 temp_file.write(chunk)
-        # Générer l'embedding à partir de l'image
-        embedding = generate_emb(temp_file_path)
-        os.remove(temp_file_path)  # Supprimer l'image temporaire après traitement
-        if embedding is None:
+        new_embedding = generate_emb(temp_file_path)
+        os.remove(temp_file_path) 
+        if new_embedding is None:
             return Response({"error": "Impossible d'extraire un visage de l'image"}, status=400)
-        # Ajouter le chauffeur et son embedding
+        else :
+            new_embedding = new_embedding.reshape(1, -1)
+            existing_chauffeurs = Chauffeurs.objects.all()
+        for chauffeur in existing_chauffeurs:
+            existing_embedding = np.frombuffer(chauffeur.embedding, dtype=np.float32)
+            existing_embedding = existing_embedding.reshape(1, -1) 
+            similarity = cosine_similarity(new_embedding, existing_embedding)
+            if similarity > 0.8: 
+                return Response({"error": "Ce visage est déjà enregistré"}, status=400)
+       
         chauffeur = item.save()
-        chauffeur.embedding = embedding.tobytes()  # Convertir l'embedding en format binaire
+        chauffeur.new_embedding = new_embedding.tobytes()
         chauffeur.save()
         return Response(ChauffeurSerializer(chauffeur).data, status=201)
     return Response(item.errors, status=400)
