@@ -1,140 +1,270 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 import Webcam from "react-webcam";
-import { isMobile } from 'react-device-detect';
-
-
-
-
+import { isMobile } from "react-device-detect";
+import * as faceapi from "face-api.js";
+import Popup from "../components/Popup";
 
 export const ExpenseForm = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    date: "",
-    amount: "",
-    category: "",
-    description: "",
-  });
-  const [recette, setRecette] = useState("");
 
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [recette, setRecette] = useState("");
+  const [imageUrl, setImageUrl] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isImageVerified, setIsImageVerified] = useState(false);
+  const [isButtonloading, setIsButtonloading] = useState(false)
   const [userData, setUserData] = useState(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [photo, setPhoto] = useState(null);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [lastBox, setLastBox] = useState(null); // Pour lisser les coordonnées
   const webcamRef = useRef(null);
+  const canvasRef = useRef(null);
 
-  // Convertir Base64 en fichier avant de l'envoyer à `setPhoto`
-  const base64ToFile = (base64String, fileName) => {
-    const base64Data = base64String.split(",")[1];
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: "image/png" });
-    return new File([blob], fileName, { type: "image/png" });
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+        ]);
+        console.log("Modèles chargés avec succès !");
+        setIsCameraReady(true);
+      } catch (error) {
+        console.error("Erreur lors du chargement des modèles :", error);
+        toast.error("Erreur de chargement des modèles de détection de visage.");
+      }
+    };
+    loadModels();
+  }, []);
+
+  const smoothBox = (newBox, prevBox, factor = 0.7) => {
+    if (!prevBox) return newBox;
+    return {
+      x: prevBox.x * factor + newBox.x * (1 - factor),
+      y: prevBox.y * factor + newBox.y * (1 - factor),
+      width: prevBox.width * factor + newBox.width * (1 - factor),
+      height: prevBox.height * factor + newBox.height * (1 - factor),
+    };
   };
 
-  const capturePhoto = () => {
-    const capturedImage = webcamRef.current.getScreenshot(); // Capture l'image de la webcam
-    const imageFile = base64ToFile(capturedImage, "image.png");
-    setImageUrl(capturedImage);
-    setPhoto(imageFile);
-    // setPhotoName(imageFile.name)
-    setIsCameraOpen(false);
-  };
+  const detectFace = async () => {
+    if (
+      !webcamRef.current ||
+      !canvasRef.current ||
+      webcamRef.current.video.readyState !== 4
+    ) {
+      setFaceDetected(false);
+      return;
+    }
 
+    const video = webcamRef.current.video;
+    const canvas = canvasRef.current;
 
-  const handleImageUpload = async () => {
-    const capturedImage = webcamRef.current.getScreenshot();
-    const file = base64ToFile(capturedImage, "image.png");
-    console.log(file)
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
 
     try {
-      setIsUploading(true);
+      const detections = await faceapi
+        .detectSingleFace(
+          video,
+          new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
+        )
+        .withFaceLandmarks();
 
-      // Créez un FormData pour envoyer le fichier à l'API
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (detections && detections.detection && detections.detection.box) {
+        const { x, y, width, height } = detections.detection.box;
+        if (x !== null && y !== null && width !== null && height !== null) {
+          setFaceDetected(true);
+          const smoothedBox = smoothBox({ x, y, width, height }, lastBox);
+          setLastBox(smoothedBox);
+          // console.log("Smoothed Box:", smoothedBox);
+
+          // Dessin amélioré du cercle
+          ctx.beginPath();
+          ctx.arc(
+            smoothedBox.x + smoothedBox.width / 2,
+            smoothedBox.y + smoothedBox.height / 2,
+            smoothedBox.width / 2,
+            0,
+            2 * Math.PI
+          );
+          ctx.strokeStyle = "limegreen";
+          ctx.lineWidth = 4;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = "limegreen";
+          ctx.stroke();
+          ctx.shadowBlur = 0; // Réinitialiser l'ombre
+        } else {
+          setFaceDetected(false);
+          setLastBox(null);
+        }
+      } else {
+        setFaceDetected(false);
+        setLastBox(null);
+        // Message si aucun visage détecté
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "yellow";
+        ctx.textAlign = "center";
+        ctx.fillText(
+          "Veuillez centrer votre visage",
+          canvas.width / 2,
+          canvas.height / 2
+        );
+      }
+    } catch (error) {
+      console.error("Erreur dans detectFace:", error);
+      setFaceDetected(false);
+      setLastBox(null);
+    }
+  };
+
+  useEffect(() => {
+    let intervalId;
+    if (isCameraOpen && isCameraReady) {
+      intervalId = setInterval(detectFace, 200); // Réduit à 5 fois par seconde pour la performance
+    }
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isCameraOpen, isCameraReady]);
+
+  const captureFace = async () => {
+    if (!webcamRef.current || !canvasRef.current || !faceDetected) {
+      toast.error("La caméra ou la détection n'est pas prête.");
+      return;
+    }
+
+    const video = webcamRef.current.video;
+    try {
+      const detections = await faceapi
+        .detectSingleFace(
+          video,
+          new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
+        )
+        .withFaceLandmarks();
+
+      if (detections && detections.detection && detections.detection.box) {
+        const { x, y, width, height } = detections.detection.box;
+        if (x !== null && y !== null && width !== null && height !== null) {
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = width;
+          tempCanvas.height = height;
+          const tempCtx = tempCanvas.getContext("2d");
+          tempCtx.drawImage(video, x, y, width, height, 0, 0, width, height);
+
+          // Effet visuel avant capture
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "rgba(0, 255, 0, 0.3)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          await new Promise((resolve) => setTimeout(resolve, 200)); // Flash vert rapide
+
+          tempCanvas.toBlob((blob) => {
+            const file = new File([blob], "face.png", { type: "image/png" });
+            setPhoto(file);
+            setImageUrl(URL.createObjectURL(file));
+            handleImageUpload(file);
+            setIsCameraOpen(false);
+          }, "image/png");
+        } else {
+          toast.error("Coordonnées invalides pour la capture.");
+        }
+      } else {
+        toast.error("Aucun visage détecté pour la capture.");
+      }
+    } catch (error) {
+      console.error("Erreur dans captureFace:", error);
+      toast.error("Erreur lors de la capture du visage.");
+    }
+  };
+
+
+  const handleImageUpload = async (file) => {
+    try {
+      setIsUploading(true);
       const formData1 = new FormData();
       formData1.append("image", file);
 
-      // Appeler l'API pour vérifier l'image
       const response = await fetch("http://127.0.0.1:8000/verification-chauffeur/", {
         method: "POST",
         body: formData1,
       });
 
       const result = await response.json();
-
       if (response.ok) {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setImageUrl(reader.result as string);
+          setImageUrl(reader.result);
           setIsImageVerified(true);
           setUserData(result);
           toast.success("Image vérifiée avec succès !");
+          setIsPopupOpen(true);
         };
         reader.readAsDataURL(file);
       } else {
-        toast.error(
-          result.message || "L'image n'a pas pu être vérifiée. Veuillez réessayer."
-        );
+        toast.error(result.message || "L'image n'a pas pu être vérifiée.");
         setIsImageVerified(false);
-        setImageUrl(null)
+        setImageUrl(null);
       }
     } catch (error) {
       console.error(error);
-      toast.error("Erreur lors de la vérification de l'image. Veuillez réessayer.");
+      toast.error("Erreur lors de la vérification de l'image.");
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleImageUploadMobile = async (e) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     try {
       setIsUploading(true);
-
-      // Créez un FormData pour envoyer le fichier à l'API
       const formData1 = new FormData();
       formData1.append("image", file);
 
-      // Appeler l'API pour vérifier l'image
       const response = await fetch("http://127.0.0.1:8000/verification-chauffeur/", {
         method: "POST",
         body: formData1,
       });
 
       const result = await response.json();
-
       if (response.ok) {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setImageUrl(reader.result as string);
+          setImageUrl(reader.result);
           setIsImageVerified(true);
           setUserData(result);
           toast.success("Image vérifiée avec succès !");
+          setIsPopupOpen(true);
         };
         reader.readAsDataURL(file);
       } else {
-        toast.error(
-          result.message || "L'image n'a pas pu être vérifiée. Veuillez réessayer."
-        );
+        toast.error(result.message || "L'image n'a pas pu être vérifiée.");
         setIsImageVerified(false);
-        setImageUrl(null)
+        setImageUrl(null);
       }
     } catch (error) {
       console.error(error);
-      toast.error("Erreur lors de la vérification de l'image. Veuillez réessayer.");
+      toast.error("Erreur lors de la vérification de l'image.");
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
+    setIsButtonloading(true)
     e.preventDefault();
     try {
       const reponse = await fetch("http://127.0.0.1:8000/point-recette/", {
@@ -143,200 +273,232 @@ export const ExpenseForm = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          "chauffeur_id": userData.id,
-          "Recette": recette,
+          chauffeur_id: userData?.id,
+          Recette: recette,
         }),
       });
       const result = await reponse.json();
 
-
       if (reponse.ok) {
-        toast.success("Recette soumis avec succès");
+        toast.success("Recette soumise avec succès");
         setImageUrl(null);
         setIsImageVerified(false);
         navigate("/dashboard");
-        Cookies.remove('token');
+        Cookies.remove("token");
         const token = Cookies.get("token");
 
         if (!token) {
           navigate("/login");
-          toast.success("Recette soumise avec success. Veuillez vous reconnecter encore SVP !");
+          toast.success("Recette soumise avec succès. Veuillez vous reconnecter !");
         }
       } else {
         toast.error(result.message || "Erreur lors de la validation de la recette");
+        setIsButtonloading(false)
       }
     } catch (error) {
-      console.error('Erreur de soumission de la recette:', error);
+      console.error("Erreur de soumission de la recette:", error);
       toast.error("Erreur de soumission");
     }
   };
 
-  // console.log(userData)
-  // const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-  //   const { name, value } = e.target;
-  //   setFormData((prev) => ({ ...prev, [name]: value }));
-  // };
-  console.log(photo)
+  const handleClosePopup = () => {
+    setIsImageVerified(false);
+    setImageUrl(null);
+    setUserData(null)
+    setIsPopupOpen(false);
+  };
+
+  const handleConfirm = () => {
+    setIsPopupOpen(false);
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
-      {isMobile ? (
-        <div className="flex flex-col items-center gap-4">
-          {imageUrl ? (
-            <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-              <img
-                src={imageUrl}
-                alt="Reçu"
-                className="w-full h-full object-cover"
-              />
-              {!isImageVerified && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <div className="text-white text-center">
-                    Vérification en cours...
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="w-full">
-              <label
-                htmlFor="image-upload"
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-              >
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-8 h-8 mb-2 text-gray-500" />
-                  <p className="text-sm text-gray-500">
-                    {isUploading
-                      ? "Chargement..."
-                      : "Cliquez pour uploader une photo"}
-                  </p>
-                </div>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  className="hidden"
-                  onChange={handleImageUploadMobile}
-                  disabled={isUploading}
+    <>
+      {isPopupOpen && (
+        <Popup
+          userData={userData}
+          isOpen={isPopupOpen}
+          onClose={handleClosePopup}
+          onConfirm={handleConfirm}
+        />
+      )}
+      <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
+        {isMobile ? (
+          <div className="flex flex-col items-center gap-4">
+            {imageUrl ? (
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+                <img
+                  src={imageUrl}
+                  alt="Reçu"
+                  className="w-full h-full object-cover"
                 />
-              </label>
-            </div>
-          )}
-        </div>
-      ) : (
-        <>
-          <div className="w-full">
-          {imageUrl ? (
-            <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-              <img
-                src={imageUrl}
-                alt="Reçu"
-                className="w-full h-full object-cover"
-              />
-              {!isImageVerified && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <div className="text-white text-center">
-                    Vérification en cours...
+                {!isImageVerified && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="text-white text-center">
+                      Vérification en cours...
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div
-              className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-              onClick={() => setIsCameraOpen(true)}
-            >
-              <p className="text-gray-600 text-lg">Cliquez pour uploader une photo</p>
-            </div>
-          )}
+                )}
+              </div>
+            ) : (
+              <div className="w-full">
+                <label
+                  htmlFor="image-upload"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 mb-2 text-gray-500" />
+                    <p className="text-sm text-gray-500">
+                      {isUploading
+                        ? "Chargement..."
+                        : "Cliquez pour uploader une photo"}
+                    </p>
+                  </div>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    capture="user"
+                    className="hidden"
+                    onChange={handleImageUploadMobile}
+                    disabled={isUploading}
+                  />
+                </label>
+              </div>
+            )}
           </div>
-          {isCameraOpen && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-              <div className="bg-white p-4 rounded-lg shadow-lg">
-                <Webcam
-                  audio={false}
-                  ref={webcamRef}
-                  screenshotFormat="image/png"
-                  className="w-full rounded-lg"
-                />
-                <div className="mt-4 flex justify-between">
-                  <button
-                    type="button"
-                    // onChange={handleImageUpload}
-                    onClick={() => {
-                      capturePhoto(); // Appeler la fonction pour capturer la photo
-                      handleImageUpload(); // Appeler la fonction pour gérer l'upload
-                    }}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
-                  >
-                    Capturer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsCameraOpen(false)}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600"
-                  >
-                    Annuler
-                  </button>
+        ) : (
+          <>
+            <div className="w-full">
+              {imageUrl ? (
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+                  <img
+                    src={imageUrl}
+                    alt="Reçu"
+                    className="w-full h-full object-cover"
+                  />
+                  {!isImageVerified && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <div className="text-white text-center">
+                        Vérification en cours...
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                  onClick={() => setIsCameraOpen(true)}
+                >
+                  <p className="text-gray-600 text-lg">Cliquez pour capturer une photo</p>
+                </div>
+              )}
+            </div>
+            {isCameraOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div className="bg-white p-4 rounded-lg shadow-lg">
+                  <div className="relative">
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      mirrored={true}
+                      screenshotFormat="image/png"
+                      className="w-full rounded-lg"
+                    />
+                    <canvas
+                      ref={canvasRef}
+                      className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                      style={{ zIndex: 10 }}
+                    />
+                  </div>
+                  <div className="mt-4 flex justify-between">
+                    <button
+                      type="button"
+                      onClick={captureFace}
+                      disabled={!faceDetected || isUploading}
+                      className={`px-4 py-2 rounded ${faceDetected && !isUploading
+                        ? "bg-green-500 hover:bg-green-700"
+                        : "bg-gray-400"
+                        } text-white`}
+                    >
+                      Capturer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCameraOpen(false)}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600"
+                    >
+                      Annuler
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </>
-      )}
-      <div>
-        <label htmlFor="recette" className="block text-sm font-medium text-gray-700 mb-2">
-          Montant
-        </label>
-        <input
-          id="recette"
-          name="recette"
-          type="number"
-          step="0.10"
-          value={recette}
-          onChange={(e) => setRecette(e.target.value)}
-          className="form-input"
-          placeholder="0.00"
-        />
-      </div>
+            )}
+          </>
+        )}
+        <div>
+          <label htmlFor="recette" className="block text-sm font-medium text-gray-700 mb-2">
+            Montant
+          </label>
+          <input
+            id="recette"
+            name="recette"
+            type="number"
+            step="0.10"
+            value={recette}
+            onChange={(e) => setRecette(e.target.value)}
+            className="form-input"
+            placeholder="0.00"
+          />
+        </div>
 
-      {isImageVerified && userData && (
-        <>
-          <div>
-            <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-2">
-              Nom
-            </label>
-            <input
-              id="nom"
-              name="nom"
-              type="text"
-              value={userData.nom}
-              // onChange={handleChange}
-              className="form-input"
-              placeholder="Votre nom"
-              readOnly
-            />
+        {isImageVerified && userData && (
+          <>
+            <div>
+              <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-2">
+                Nom
+              </label>
+              <input
+                id="nom"
+                name="nom"
+                type="text"
+                value={userData.nom || ""}
+                className="form-input"
+                placeholder="Votre nom"
+                readOnly
+              />
+            </div>
+            <div>
+              <label htmlFor="prenom" className="block text-sm font-medium text-gray-700 mb-2">
+                Prénom
+              </label>
+              <input
+                id="prenom"
+                name="prenom"
+                type="text"
+                value={userData.prenom || ""}
+                className="form-input"
+                placeholder="Votre prénom"
+                readOnly
+              />
+            </div>
+          </>
+        )}
+        {!isButtonloading ? (
+          <button type="submit"
+            className="btn-primary w-full"
+            disabled={!isImageVerified}
+          >
+            Enregistrer la recette
+          </button>
+        ) : (
+          <div className="flex justify-center p-1 rounded-lg btn-primary">
+            <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full"></div>
           </div>
-          <div>
-            <label htmlFor="prenom" className="block text-sm font-medium text-gray-700 mb-2">
-              Prenom
-            </label>
-            <input
-              id="prenom"
-              name="prenom"
-              type="text"
-              value={userData.prenom}
-              // onChange={handleChange}
-              className="form-input"
-              placeholder="Votre prenom"
-              readOnly
-            />
-          </div>
-        </>
-      )}
-      <button type="submit" className="btn-primary w-full">
-        Enregistrer la recette
-      </button>
-    </form>
+        )}
+
+      </form>
+    </>
+
   );
 };

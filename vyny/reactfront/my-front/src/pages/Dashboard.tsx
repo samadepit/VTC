@@ -18,22 +18,7 @@ import {
 const Dashboard = () => {
   // Données temporaires pour la démonstration
   const navigate = useNavigate();
-  const mockRecipes = [
-    {
-      id: "1",
-      date: "2024-03-20",
-      amount: 150.5,
-      description: "Course Paris-Lyon",
-      type: "income" as const,
-    },
-    {
-      id: "2",
-      date: "2024-03-21",
-      amount: 45.30,
-      description: "Essence",
-      type: "expense" as const,
-    },
-  ];
+
 
 
   return (
@@ -70,10 +55,11 @@ const Dashboard = () => {
 
           </Dialog>
         </div>
-
+      
         {/* <div className="bg-white rounded-lg shadow">
           <DriverRecipes driverId="temp-id" recipes={mockRecipes} />
         </div> */}
+
       </div>
     </div>
   );

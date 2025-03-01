@@ -9,10 +9,12 @@ import { toast } from "sonner";
 export const LoginForm = () => {
 
   const [code, setCode] = useState("");
+  const [isButtonloading, setIsButtonloading] = useState(false)
   const navigate = useNavigate();
   // const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setIsButtonloading(true)
     e.preventDefault();
     const reponse = await fetch("http://127.0.0.1:8000/verifier-code/", {
       method: "POST",
@@ -23,23 +25,15 @@ export const LoginForm = () => {
         "code": code,
       }),
     });
-    const unique_id = uuid(); 
+    const unique_id = uuid();
     const data = await reponse.json();
     if (reponse.ok) {
-      // toast({
-      //   title: "Connexion réussie",
-      //   description: "Bienvenue sur votre espace chauffeur",
-      // });
       toast.success("Connexion réussie");
       navigate("/dashboard");
-      Cookies.set('token', unique_id, { expires: 1 / 144 }); 
+      Cookies.set('token', unique_id, { expires: 1 / 144 });
     } else {
-      // toast({
-      //   variant: "destructive",
-      //   title: "Erreur",
-      //   description: "Code invalide ou expiré.",
-      // });
       toast.error(data.message || "Code invalide");
+      setIsButtonloading(false)
     }
   };
 
@@ -60,18 +54,18 @@ export const LoginForm = () => {
           required
         />
       </div>
-      <button type="submit" className="btn-primary w-full">
-        Se connecter
-      </button>
-      {/* <p className="text-center text-sm text-gray-600">
-        Pas encore inscrit ?{" "}
-        <span
-          onClick={() => navigate("/register")}
-          className="text-primary hover:text-primary-dark cursor-pointer"
-        >
-          Créer un compte
-        </span>
-      </p> */}
+      {!isButtonloading ? (
+        <button
+          type="submit"
+          className="btn-primary w-full"
+          >
+          Se connecter
+        </button>
+      ) : (
+        <div className="flex justify-center p-1 rounded-lg btn-primary">
+          <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full"></div>
+        </div>
+      )}
     </form>
   );
 };
