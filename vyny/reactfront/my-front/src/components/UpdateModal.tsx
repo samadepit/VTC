@@ -40,9 +40,19 @@ export const UpdateModal = ({
       formData1.append("nom", formData.nom)
       formData1.append("prenom", formData.prenom)
       formData1.append("date_naissance", formData.date_naissance)
+      formData1.append("lieu_naissance", formData.lieu_naissance)
+      formData1.append("situation_matrimoniale", formData.situation_matrimoniale)
+      formData1.append("numero_tel", formData.numero_tel)
+      formData1.append("niveau_etude", formData.niveau_etude)
+      formData1.append("experience_pro", formData.experience_pro)
+      formData1.append("personne_en_cas_urgence", formData.personne_en_cas_urgence)
+      formData1.append("num_en_cas_urgence", formData.num_en_cas_urgence)
+      formData1.append("employeur_precedant", formData.employeur_precedant)
       onUpdate(formData1);
     }else{
       formData1.append("Recette", formData.Recette)
+      formData1.append("immatriculation_auto", formData.immatriculation_auto)
+      formData1.append("km", formData.km)
       onUpdate(formData1);
     }
   };
@@ -57,12 +67,21 @@ export const UpdateModal = ({
       { name: "nom", label: "Nom", type: "text" },
       { name: "prenom", label: "Prénom", type: "text" },
       { name: "date_naissance", label: "Date de naissance", type: "date" },
+      { name: "lieu_naissance", label: "Lieu de naissance", type: "text" },
+      { name: "situation_matrimoniale", label: "Situation matrimoniale", type: "text" },
+      { name: "numero_tel", label: "Numero de téléphone", type: "text" },
+      { name: "niveau_etude", label: "Lieu d'habitation", type: "text" },
+      { name: "experience_pro", label: "Experience pro", type: "text" },
+      { name: "personne_en_cas_urgence", label: "Personne en cas d'urgence", type: "text" },
+      { name: "num_en_cas_urgence", label: "Numéro en cas d'urgence", type: "text" },
+      { name: "employeur_precedant", label: "Employeur precedent", type: "text" },
+     
     ]
     : [
       // { name: "date_de_point", label: "Date", type:"date" },
       { name: "Recette", label: "Recette", type: "number" },
-      // { name: "chauffeur_nom", label: "Nom du chauffeur", type:"text" },
-      // { name: "chauffeur_prenom", label: "Prénom du chauffeur", type:"text" },
+      { name: "immatriculation_auto", label: "Immatriculation", type:"text" },
+      { name: "km", label: "Kilométrage", type:"text" },
     ];
 
   return (

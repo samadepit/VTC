@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { DeleteModal } from "./DeleteModal";
 import { UpdateModal } from "./UpdateModal";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface DataTableProps {
   data: any[];
@@ -41,27 +43,52 @@ export const DataTable = ({
     setIsDeleteModalOpen(true);
   };
 
+  const formatDate = (isoDate) => {
+    return format(new Date(isoDate), "EEEE d MMMM yyyy HH'h'mm ss's'", { locale: fr });
+  };
+
+  const renderCellContent = (item: any, accessor: string) => {
+    const value = item[accessor];
+    const dateColumns = ["date_de_point"];
+    if (dateColumns.includes(accessor) && value) {
+      return formatDate(value);
+    }
+    return value || "-";
+  };
+
   return (
     <div className="w-full">
-      <div className="rounded-md border animate-fade-in">
-        <Table>
+      <div className="rounded-md border animate-fade-in overflow-x-auto">
+        <Table className="min-w-max"> {/* min-w-max pour éviter la compression */}
           <TableHeader>
             <TableRow>
               {columns.map((column) => (
-                <TableHead key={column.accessor}>{column.header}</TableHead>
+                <TableHead
+                  key={column.accessor}
+                  className="whitespace-nowrap px-4" // Empêche le texte de se couper
+                >
+                  {column.header}
+                </TableHead>
               ))}
-              <TableHead>Actions</TableHead>
+              <TableHead className="whitespace-nowrap px-4">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((item, index) => (
-              <TableRow key={item.id} className="animate-slide-in" style={{ animationDelay: `${index * 0.05}s` }}>
+              <TableRow
+                key={item.id}
+                className="animate-slide-in"
+                style={{ animationDelay: `${index * 0.05}s` }}
+              >
                 {columns.map((column) => (
-                  <TableCell key={column.accessor}>
-                    {item[column.accessor]}
+                  <TableCell
+                    key={column.accessor}
+                    className="whitespace-nowrap px-4" // Empêche le texte de se couper
+                  >
+                    {renderCellContent(item, column.accessor)}
                   </TableCell>
                 ))}
-                <TableCell>
+                <TableCell className="whitespace-nowrap px-4">
                   <div className="flex space-x-2">
                     <Button
                       variant="outline"

@@ -6,25 +6,34 @@ import Cookies from "js-cookie";
 import Webcam from "react-webcam";
 import { isMobile } from "react-device-detect";
 import * as faceapi from "face-api.js";
+import Camera, { FACING_MODES, IMAGE_TYPES } from "react-html5-camera-photo";
 import Popup from "../components/Popup";
 
 export const ExpenseForm = () => {
   const navigate = useNavigate();
-
   const [recette, setRecette] = useState("");
   const [imageUrl, setImageUrl] = useState(null);
+  const [km, setKm] = useState(null);
+  const [matriculation, setMatriculation] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isImageVerified, setIsImageVerified] = useState(false);
-  const [isButtonloading, setIsButtonloading] = useState(false)
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [photo, setPhoto] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isButtonloading, setIsButtonloading] = useState(false)
   const [lastBox, setLastBox] = useState(null); // Pour lisser les coordonnées
+  const [isFaceInCircle, setIsFaceInCircle] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user"); // "user" = avant, "environment" = arrière
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
+
+
+  const toggleCamera = () => {
+    setFacingMode(prevMode => prevMode === "user" ? "environment" : "user");
+  };
 
   useEffect(() => {
     const loadModels = async () => {
@@ -53,79 +62,25 @@ export const ExpenseForm = () => {
     };
   };
 
-  const detectFace = async () => {
-    if (
-      !webcamRef.current ||
-      !canvasRef.current ||
-      webcamRef.current.video.readyState !== 4
-    ) {
-      setFaceDetected(false);
-      return;
-    }
-
-    const video = webcamRef.current.video;
-    const canvas = canvasRef.current;
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    try {
-      const detections = await faceapi
-        .detectSingleFace(
-          video,
-          new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
-        )
-        .withFaceLandmarks();
-
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (detections && detections.detection && detections.detection.box) {
-        const { x, y, width, height } = detections.detection.box;
-        if (x !== null && y !== null && width !== null && height !== null) {
-          setFaceDetected(true);
-          const smoothedBox = smoothBox({ x, y, width, height }, lastBox);
-          setLastBox(smoothedBox);
-          // console.log("Smoothed Box:", smoothedBox);
-
-          // Dessin amélioré du cercle
-          ctx.beginPath();
-          ctx.arc(
-            smoothedBox.x + smoothedBox.width / 2,
-            smoothedBox.y + smoothedBox.height / 2,
-            smoothedBox.width / 2,
-            0,
-            2 * Math.PI
-          );
-          ctx.strokeStyle = "limegreen";
-          ctx.lineWidth = 4;
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = "limegreen";
-          ctx.stroke();
-          ctx.shadowBlur = 0; // Réinitialiser l'ombre
-        } else {
-          setFaceDetected(false);
-          setLastBox(null);
-        }
-      } else {
-        setFaceDetected(false);
-        setLastBox(null);
-        // Message si aucun visage détecté
-        ctx.font = "20px Arial";
-        ctx.fillStyle = "yellow";
-        ctx.textAlign = "center";
-        ctx.fillText(
-          "Veuillez centrer votre visage",
-          canvas.width / 2,
-          canvas.height / 2
+  // Vérifier les permissions de la caméra
+  useEffect(() => {
+    const checkCameraPermission = async () => {
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        console.log("Accès à la caméra autorisé");
+      } catch (error) {
+        console.error("Erreur d'accès à la caméra:", error);
+        toast.error(
+          "Impossible d'accéder à la caméra. Vérifiez les permissions ou assurez-vous d'utiliser HTTPS."
         );
+        setIsCameraOpen(false);
       }
-    } catch (error) {
-      console.error("Erreur dans detectFace:", error);
-      setFaceDetected(false);
-      setLastBox(null);
+    };
+
+    if (isCameraOpen) {
+      checkCameraPermission();
     }
-  };
+  }, [isCameraOpen]);
 
   useEffect(() => {
     let intervalId;
@@ -139,9 +94,104 @@ export const ExpenseForm = () => {
     };
   }, [isCameraOpen, isCameraReady]);
 
+
+  const detectFace = async () => {
+    if (
+      !webcamRef.current ||
+      !canvasRef.current ||
+      webcamRef.current.video.readyState !== 4
+    ) {
+      setFaceDetected(false);
+      setIsFaceInCircle(false);
+      return;
+    }
+
+    const video = webcamRef.current.video;
+    const canvas = canvasRef.current;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Dessiner le cercle fixe au centre
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(canvas.width, canvas.height) * 0.3;
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    try {
+      const detections = await faceapi
+        .detectSingleFace(
+          video,
+          new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
+        )
+        .withFaceLandmarks();
+
+      if (detections && detections.detection && detections.detection.box) {
+        const { x, y, width, height } = detections.detection.box;
+        if (x !== null && y !== null && width !== null && height !== null) {
+          setFaceDetected(true);
+          const smoothedBox = smoothBox({ x, y, width, height }, lastBox);
+          setLastBox(smoothedBox);
+
+          // Calculer le centre du visage
+          const faceCenterX = smoothedBox.x + smoothedBox.width / 2;
+          const faceCenterY = smoothedBox.y + smoothedBox.height / 2;
+
+          // Vérifier si le visage est dans le cercle
+          const distance = Math.sqrt(
+            Math.pow(faceCenterX - centerX, 2) +
+            Math.pow(faceCenterY - centerY, 2)
+          );
+
+          const isInside = distance < radius &&
+            smoothedBox.width < radius * 2 &&
+            smoothedBox.height < radius * 2;
+          setIsFaceInCircle(isInside);
+
+          // Mise à jour de la couleur du cercle selon la position
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+          ctx.strokeStyle = isInside ? "limegreen" : "white";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else {
+          setFaceDetected(false);
+          setIsFaceInCircle(false);
+          setLastBox(null);
+        }
+      } else {
+        setFaceDetected(false);
+        setIsFaceInCircle(false);
+        setLastBox(null);
+        ctx.font = "20px Arial";
+        ctx.fillStyle = "yellow";
+        ctx.textAlign = "center";
+        ctx.fillText(
+          "Veuillez centrer votre visage dans le cercle",
+          canvas.width / 2,
+          canvas.height / 2
+        );
+      }
+    } catch (error) {
+      console.error("Erreur dans detectFace:", error);
+      setFaceDetected(false);
+      setIsFaceInCircle(false);
+      setLastBox(null);
+    }
+  };
+
+
   const captureFace = async () => {
-    if (!webcamRef.current || !canvasRef.current || !faceDetected) {
-      toast.error("La caméra ou la détection n'est pas prête.");
+    if (!webcamRef.current || !canvasRef.current || !faceDetected || !isFaceInCircle) {
+      toast.error("Veuillez positionner votre visage dans le cercle.");
       return;
     }
 
@@ -251,7 +301,7 @@ export const ExpenseForm = () => {
         };
         reader.readAsDataURL(file);
       } else {
-        toast.error(result.message || "L'image n'a pas pu être vérifiée.");
+        toast.error(result.error || "L'image n'a pas pu être vérifiée.");
         setIsImageVerified(false);
         setImageUrl(null);
       }
@@ -275,6 +325,8 @@ export const ExpenseForm = () => {
         body: JSON.stringify({
           chauffeur_id: userData?.id,
           Recette: recette,
+          km: km,
+          immatriculation_auto: matriculation,
         }),
       });
       const result = await reponse.json();
@@ -292,7 +344,7 @@ export const ExpenseForm = () => {
           toast.success("Recette soumise avec succès. Veuillez vous reconnecter !");
         }
       } else {
-        toast.error(result.message || "Erreur lors de la validation de la recette");
+        toast.error(result.error || "Erreur lors de la validation de la recette");
         setIsButtonloading(false)
       }
     } catch (error) {
@@ -323,137 +375,128 @@ export const ExpenseForm = () => {
         />
       )}
       <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
-        {isMobile ? (
-          <div className="flex flex-col items-center gap-4">
-            {imageUrl ? (
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-                <img
-                  src={imageUrl}
-                  alt="Reçu"
-                  className="w-full h-full object-cover"
-                />
-                {!isImageVerified && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <div className="text-white text-center">
-                      Vérification en cours...
-                    </div>
+        <div className="w-full">
+          {imageUrl ? (
+            <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+              <img
+                src={imageUrl}
+                alt="Reçu"
+                className="w-full h-full object-cover"
+              />
+              {!isImageVerified && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <div className="text-white text-center">
+                    Vérification en cours...
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="w-full">
-                <label
-                  htmlFor="image-upload"
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-                >
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Upload className="w-8 h-8 mb-2 text-gray-500" />
-                    <p className="text-sm text-gray-500">
-                      {isUploading
-                        ? "Chargement..."
-                        : "Cliquez pour uploader une photo"}
-                    </p>
-                  </div>
-                  <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    capture="user"
-                    className="hidden"
-                    onChange={handleImageUploadMobile}
-                    disabled={isUploading}
-                  />
-                </label>
-              </div>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="w-full">
-              {imageUrl ? (
-                <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-                  <img
-                    src={imageUrl}
-                    alt="Reçu"
-                    className="w-full h-full object-cover"
-                  />
-                  {!isImageVerified && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <div className="text-white text-center">
-                        Vérification en cours...
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-                  onClick={() => setIsCameraOpen(true)}
-                >
-                  <p className="text-gray-600 text-lg">Cliquez pour capturer une photo</p>
                 </div>
               )}
             </div>
-            {isCameraOpen && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <div className="bg-white p-4 rounded-lg shadow-lg">
-                  <div className="relative">
-                    <Webcam
-                      audio={false}
-                      ref={webcamRef}
-                      mirrored={true}
-                      screenshotFormat="image/png"
-                      className="w-full rounded-lg"
-                    />
-                    <canvas
-                      ref={canvasRef}
-                      className="absolute top-0 left-0 w-full h-full pointer-events-none"
-                      style={{ zIndex: 10 }}
-                    />
-                  </div>
-                  <div className="mt-4 flex justify-between">
-                    <button
-                      type="button"
-                      onClick={captureFace}
-                      disabled={!faceDetected || isUploading}
-                      className={`px-4 py-2 rounded ${faceDetected && !isUploading
-                        ? "bg-green-500 hover:bg-green-700"
-                        : "bg-gray-400"
-                        } text-white`}
-                    >
-                      Capturer
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsCameraOpen(false)}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-        <div>
-          <label htmlFor="recette" className="block text-sm font-medium text-gray-700 mb-2">
-            Montant
-          </label>
-          <input
-            id="recette"
-            name="recette"
-            type="number"
-            step="0.10"
-            value={recette}
-            onChange={(e) => setRecette(e.target.value)}
-            className="form-input"
-            placeholder="0.00"
-          />
+          ) : (
+            <div
+              className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+              onClick={() => setIsCameraOpen(true)}
+            >
+              <p className="text-gray-600 text-lg">Cliquez pour capturer une photo</p>
+            </div>
+          )}
         </div>
-
+        {isCameraOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="bg-white p-4 rounded-lg shadow-lg">
+              <div className="relative">
+                <Webcam
+                  audio={false}
+                  ref={webcamRef}
+                  mirrored={facingMode === "user"} // Miroir uniquement pour la caméra avant
+                  screenshotFormat="image/png"
+                  className="w-full rounded-lg"
+                  videoConstraints={{
+                    facingMode: facingMode 
+                  }}
+                />
+                <canvas
+                  ref={canvasRef}
+                  className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                  style={{ zIndex: 10 }}
+                />
+              </div>
+              <div className="mt-4 flex justify-between">
+                <button
+                  type="button"
+                  onClick={captureFace}
+                  disabled={!isFaceInCircle}
+                  className={`px-4 py-2 rounded ${isFaceInCircle
+                    ? "bg-green-500 hover:bg-green-700"
+                    : "bg-gray-400 cursor-not-allowed"
+                    } text-white`}
+                >
+                  Capturer
+                </button>
+                {isMobile && (
+                  <button
+                    type="button"
+                    onClick={toggleCamera}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
+                  >
+                    {facingMode === "user" ? "Caméra arrière" : "Caméra avant"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsCameraOpen(false)}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600"
+                >
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {isImageVerified && userData && (
           <>
+            <div>
+              <label htmlFor="recette" className="block text-sm font-medium text-gray-700 mb-2">
+                Montant
+              </label>
+              <input
+                id="recette"
+                name="recette"
+                type="number"
+                step="0.10"
+                value={recette}
+                onChange={(e) => setRecette(e.target.value)}
+                className="form-input"
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label htmlFor="km" className="block text-sm font-medium text-gray-700 mb-2">
+                Kilométrage
+              </label>
+              <input
+                id="km"
+                name="km"
+                type="text"
+                value={km}
+                onChange={(e) => setKm(e.target.value)}
+                className="form-input"
+                placeholder="Entrez le kilométrage"
+              />
+            </div>
+            <div>
+              <label htmlFor="matriculation" className="block text-sm font-medium text-gray-700 mb-2">
+                Immatriculation
+              </label>
+              <input
+                id="matriculation"
+                name="matriculation"
+                type="text"
+                value={matriculation}
+                onChange={(e) => setMatriculation(e.target.value)}
+                className="form-input"
+                placeholder="Entrez l'immatriculation de la voiture"
+              />
+            </div>
             <div>
               <label htmlFor="nom" className="block text-sm font-medium text-gray-700 mb-2">
                 Nom
@@ -463,9 +506,9 @@ export const ExpenseForm = () => {
                 name="nom"
                 type="text"
                 value={userData.nom || ""}
-                className="form-input"
+                className="form-input text-gray-500 bg-gray-100"
                 placeholder="Votre nom"
-                readOnly
+                disabled
               />
             </div>
             <div>
@@ -477,9 +520,9 @@ export const ExpenseForm = () => {
                 name="prenom"
                 type="text"
                 value={userData.prenom || ""}
-                className="form-input"
+                className="form-input text-gray-500 bg-gray-100"
                 placeholder="Votre prénom"
-                readOnly
+                disabled
               />
             </div>
           </>

@@ -6,18 +6,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
+
 const chauffeurColumns = [
-  { header: "NOM", accessor: "nom" },
-  { header: "PRENOM", accessor: "prenom" },
-  { header: "DATE DE NAISSANCE", accessor: "date_naissance" },
-  { header: "SEXE", accessor: "sexe" },
-];
+  { header: "Nom", accessor: "nom" },
+  { header: "Prénom", accessor: "prenom" },
+  { header: "Date de naissance", accessor: "date_naissance" },
+  { header: "Sexe", accessor: "sexe" },
+  { header: "Numero CNI", accessor: "numero_CNI" },
+  { header: "Numero de téléphone", accessor: "numero_tel" },
+  { header: "Lieu de naissance", accessor: "lieu_naissance" },
+  { header: "Situation matrimoniale", accessor: "situation_matrimoniale" },
+  { header: "Lieu d'habitation", accessor: "lieu_habitation" },
+  { header: "Niveau d'étude", accessor: "niveau_etude" },
+  { header: "Expérience Pro", accessor: "experience_pro" },
+  { header: "Personne en cas d'urgence", accessor: "personne_en_cas_urgence" },
+  { header: "Numero en cas d'urgence", accessor: "num_en_cas_urgence" },
+  { header: "Employeur précédant", accessor: "employeur_precedant" },
+];  
 
 const recetteColumns = [
-  { header: "DATE", accessor: "date_de_point" },
-  { header: "RECETTE", accessor: "Recette" },
-  { header: "NOM CHAUFFEUR", accessor: "chauffeur_nom" },
-  { header: "PRENOM CHAUFFEUR", accessor: "chauffeur_prenom" },
+  { header: "Date", accessor: "date_de_point" },
+  { header: "Recette", accessor: "Recette" },
+  { header: "Nom chauffeur", accessor: "chauffeur_nom" },
+  { header: "Prenom chauffeur", accessor: "chauffeur_prenom" },
+  { header: "Immatriculation", accessor: "immatriculation_auto" },
+  { header: "Kilométrage", accessor: "km" },
 ];
 
 const ListeChauffeurRecette = () => {

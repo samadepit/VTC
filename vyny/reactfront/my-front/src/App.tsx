@@ -26,6 +26,7 @@ const App = () => (
           <Header />
           <Routes>
             <Route path="/login/admin" element={<AdminLogin />} />
+            <Route path="register" element={<Register />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route element={<ProtectedRouteAdmin />}>
               <Route path="/admin" element={<AdminDashboard />} />
@@ -37,7 +38,7 @@ const App = () => (
             </Route>
             {/* Protéger les routes pour les utilisateurs connectés */}
             <Route path="/" element={<ProtectedRoute />}>
-              <Route path="register" element={<Register />} />
+              
               
             </Route>
 

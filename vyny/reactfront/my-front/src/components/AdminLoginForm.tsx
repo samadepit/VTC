@@ -6,41 +6,36 @@ export const AdminLoginForm = () => {
     const navigate = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [isButtonloading, setIsButtonloading] = useState(false)
+
     // const { toast } = useToast();
     const handleSubmit = async (e: React.FormEvent) => {
+        setIsButtonloading(true)
         e.preventDefault();
         const reponse = await fetch("http://127.0.0.1:8000/login/", {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
+                "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              "username": username,
-              "password": password,
+                "username": username,
+                "password": password,
             }),
-          });
-          const data = await reponse.json();
-          const token_admin = data.token
+        });
+        const data = await reponse.json();
+        const token_admin = data.token
         //   console.log(token_admin)
-          Cookies.set('token_admin', token_admin);
-        //   Cookies.set('token_admin', token_admin, { expires: 1 / 144 });
-          if (reponse.ok) {
-            // toast({
-            //     title: "Connexion réussie",
-            //     description: "Bienvenue dans votre espace administrateur",
-            // });
+        // Cookies.set('token_admin', token_admin);
+          Cookies.set('token_admin', token_admin, { expires: 1 / 144 });
+        if (reponse.ok) {
             toast.success("Connexion réussie, Bienvenue dans votre espace administrateur");
             navigate("/admin");
         } else {
-            // toast({
-            //     variant: "destructive",
-            //     title: "Erreur de connexion",
-            //     description: "Email ou mot de passe incorrect",
-            // });
             toast.error(data.message || "Email ou mot de passe incorrect");
+            setIsButtonloading(false)
         }
     };
-    
+
     return (
         <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
             <div>
@@ -69,9 +64,15 @@ export const AdminLoginForm = () => {
                     required
                 />
             </div>
-            <button type="submit" className="btn-primary w-full">
-                Se connecter
-            </button>
+            {!isButtonloading ? (
+                <button type="submit" className="btn-primary w-full">
+                    Se connecter
+                </button>
+            ) : (
+                <div className="flex justify-center p-1 rounded-lg btn-primary">
+                    <div className="animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full"></div>
+                </div>
+            )}
         </form>
     );
 };
