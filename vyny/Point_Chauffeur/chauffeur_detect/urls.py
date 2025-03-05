@@ -19,4 +19,5 @@ urlpatterns = [
     path('update-chauffeur/<int:id>/', views.update_chauffeur),
     path('update-recette/<int:id>/', views.update_recette),
     path('delete-recette/<int:id>/', views.delete_recette),
+    # path('verify-token/', views.VerifyTokenView.as_view(), name='verify-token'),
 ]

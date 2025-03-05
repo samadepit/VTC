@@ -7,7 +7,17 @@ class Chauffeurs(models.Model):
     nom = models.CharField(max_length=100)
     prenom = models.CharField(max_length=100)
     date_naissance = models.DateField()
+    lieu_naissance = models.CharField(max_length=100)
     sexe = models.CharField(max_length=1)
+    situation_matrimoniale = models.CharField(max_length=100)
+    numero_CNI = models.CharField(max_length=11)
+    numero_tel = models.CharField(max_length=13)
+    lieu_habitation = models.CharField(max_length=100)
+    niveau_etude = models.CharField(max_length=100,null=True,blank=True)
+    experience_pro = models.CharField(max_length=100,null=True,blank=True)
+    personne_en_cas_urgence = models.CharField(max_length=100)
+    num_en_cas_urgence = models.CharField(max_length=13)
+    employeur_precedant = models.CharField(max_length=100,null=True,blank=True)
     photo = models.ImageField(upload_to='photos_clients/', null=False, blank=False) #quand c TRUE c kil est falcultatif
     embedding = models.BinaryField(null=True, blank=True)
 
@@ -18,6 +28,7 @@ class Point_Recette(models.Model):
     Recette = models.IntegerField()
     date_de_point = models.DateTimeField(auto_now_add=True) #prendre la date actu pour l'enregistré directement
     immatriculation_auto=models.CharField(max_length=14)
+    km = models.CharField(max_length=100)
     def __str__(self):
         return f"Présence de {self.Chauffeur_id} le {self.date_de_point.strftime('%Y-%m-%d %H:%M:%S')} recettte: {self.Recette} vehicule:{self.immatriculation_auto}"
 from django.utils import timezone

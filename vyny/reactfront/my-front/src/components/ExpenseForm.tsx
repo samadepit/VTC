@@ -344,7 +344,7 @@ export const ExpenseForm = () => {
           toast.success("Recette soumise avec succès. Veuillez vous reconnecter !");
         }
       } else {
-        toast.error(result.error || "Erreur lors de la validation de la recette");
+        toast.error(result.message || "Erreur lors de la validation de la recette");
         setIsButtonloading(false)
       }
     } catch (error) {
