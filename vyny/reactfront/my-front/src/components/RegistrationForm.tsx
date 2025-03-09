@@ -248,7 +248,7 @@ export const RegistrationForm = () => {
     formData.append("num_en_cas_urgence", numCasUrgent);
     formData.append("employeur_precedant", employeurPrec);
 
-    const data = await fetch("http://127.0.0.1:8000/chauffeurs/", {
+    const data = await fetch("https://dc05-102-212-190-42.ngrok-free.app/chauffeurs/", {
       method: "POST",
       // headers: { "Content-Type": "multipart/form-data" },
       body: formData,

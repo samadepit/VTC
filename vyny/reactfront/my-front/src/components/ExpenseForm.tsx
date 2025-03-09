@@ -246,7 +246,7 @@ export const ExpenseForm = () => {
       const formData1 = new FormData();
       formData1.append("image", file);
 
-      const response = await fetch("http://127.0.0.1:8000/verification-chauffeur/", {
+      const response = await fetch("https://dc05-102-212-190-42.ngrok-free.app/verification-chauffeur/", {
         method: "POST",
         body: formData1,
       });
@@ -284,7 +284,7 @@ export const ExpenseForm = () => {
       const formData1 = new FormData();
       formData1.append("image", file);
 
-      const response = await fetch("http://127.0.0.1:8000/verification-chauffeur/", {
+      const response = await fetch("https://dc05-102-212-190-42.ngrok-free.app/verification-chauffeur/", {
         method: "POST",
         body: formData1,
       });
@@ -317,7 +317,7 @@ export const ExpenseForm = () => {
     setIsButtonloading(true)
     e.preventDefault();
     try {
-      const reponse = await fetch("http://127.0.0.1:8000/point-recette/", {
+      const reponse = await fetch("https://dc05-102-212-190-42.ngrok-free.app/point-recette/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -374,7 +374,7 @@ export const ExpenseForm = () => {
           onConfirm={handleConfirm}
         />
       )}
-      <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md">
+      <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md max-h-[80vh] overflow-y-auto sm:max-h-none sm:overflow-y-visible">
         <div className="w-full">
           {imageUrl ? (
             <div className="relative w-full aspect-video rounded-lg overflow-hidden">

@@ -87,7 +87,7 @@ export const UpdateModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] animate-fade-in">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-6 w-full max-w-md max-h-[80vh] overflow-y-auto sm:max-h-none sm:overflow-y-visible">
           <DialogHeader>
             <DialogTitle>
               Modifier {type === "chauffeur" ? "l'utilisateur" : "la recette"}

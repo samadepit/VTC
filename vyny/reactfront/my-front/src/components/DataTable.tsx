@@ -59,59 +59,54 @@ export const DataTable = ({
   return (
     <div className="w-full">
       <div className="rounded-md border animate-fade-in overflow-x-auto">
-        <Table className="min-w-max"> {/* min-w-max pour éviter la compression */}
-          <TableHeader>
-            <TableRow>
+      <Table className="min-w-max"><TableHeader><TableRow>
+          {columns.map((column) => (
+            <TableHead
+              key={column.accessor}
+              className="whitespace-nowrap px-4"
+            >
+              {column.header}
+            </TableHead>
+          ))}
+          <TableHead className="whitespace-nowrap px-4">Actions</TableHead>
+        </TableRow></TableHeader><TableBody>
+          {data.map((item, index) => (
+            <TableRow
+              key={item.id}
+              className="animate-slide-in"
+              style={{ animationDelay: `${index * 0.05}s` }}
+            >
               {columns.map((column) => (
-                <TableHead
+                <TableCell
                   key={column.accessor}
-                  className="whitespace-nowrap px-4" // Empêche le texte de se couper
+                  className="whitespace-nowrap px-4"
                 >
-                  {column.header}
-                </TableHead>
-              ))}
-              <TableHead className="whitespace-nowrap px-4">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.map((item, index) => (
-              <TableRow
-                key={item.id}
-                className="animate-slide-in"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.accessor}
-                    className="whitespace-nowrap px-4" // Empêche le texte de se couper
-                  >
-                    {renderCellContent(item, column.accessor)}
-                  </TableCell>
-                ))}
-                <TableCell className="whitespace-nowrap px-4">
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleUpdate(item)}
-                      className="hover:bg-primary/10 transition-colors"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleDelete(item)}
-                      className="hover:bg-destructive/10 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {renderCellContent(item, column.accessor)}
                 </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+              ))}
+              <TableCell className="whitespace-nowrap px-4">
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleUpdate(item)}
+                    className="hover:bg-primary/10 transition-colors"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleDelete(item)}
+                    className="hover:bg-destructive/10 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody></Table>
       </div>
 
       <UpdateModal

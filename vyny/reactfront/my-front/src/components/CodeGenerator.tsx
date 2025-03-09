@@ -9,7 +9,7 @@ export const CodeGenerator = () => {
     const generateCode = async (e) => {
         setIsButtonloading(true)
         e.preventDefault();
-        const reponse = await fetch("http://127.0.0.1:8000/generer-code/", {
+        const reponse = await fetch("https://dc05-102-212-190-42.ngrok-free.app/generer-code/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
