@@ -8,3 +8,4 @@ jet_django
 facenet_pytorch
 scikit-learn
 gunicorn==20.1.0
+whitenoise
