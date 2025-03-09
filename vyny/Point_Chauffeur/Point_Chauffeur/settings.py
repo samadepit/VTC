@@ -54,11 +54,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     # 'jet_django.middleware.JetDjangoMiddleware',
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://784d-102-67-246-249.ngrok-free.app",
+    "https://f07b-102-67-253-21.ngrok-free.app",
     "http://127.0.0.1:8000",
     "http://localhost:3000",
     "http://localhost:8080",
@@ -97,15 +98,26 @@ WSGI_APPLICATION = 'Point_Chauffeur.wsgi.application'
 # }
 
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE':'django.db.backends.mysql',
+#         'NAME': 'defaultdb',
+#         'USER': 'avnadmin',
+#         'PASSWORD': 'AVNS_iJrHFhe7g1uFM2b--9U',
+#         'HOST': 'mysql-1a07f290-samadeinfo-58f6.h.aivencloud.com',
+#         'PORT': '17065',
+#         'ssl_require': True,
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE':'django.db.backends.mysql',
-        'NAME': 'defaultdb',
-        'USER': 'avnadmin',
-        'PASSWORD': 'AVNS_iJrHFhe7g1uFM2b--9U',
-        'HOST': 'mysql-1a07f290-samadeinfo-58f6.h.aivencloud.com',
-        'PORT': '17065',
-        'ssl_require': True,
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME'),          
+        'USER': os.getenv('DB_USER'),          
+        'PASSWORD': os.getenv('DB_PASSWORD'),  
+        'HOST': os.getenv('DB_HOST'),         
+        'PORT': os.getenv('DB_PORT', '3306'), 
     }
 }
 
@@ -158,7 +170,7 @@ JET_TOKEN = 'fb8f0762-d2ad-4cfc-9413-f5c4637a958f'
 JET_DJANGO_API_BASE_URL = 'https://784d-102-67-246-249.ngrok-free.app/jet_api/'
 
 STATIC_URL = "static/"
-STATIC_ROOT = 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 import os
