@@ -4,4 +4,4 @@ django-cors-headers==4.6.0
 django-jet==1.0.8
 djangorestframework==3.15.2
 djangorestframework_simplejwt==5.4.0
-
+pymysql
