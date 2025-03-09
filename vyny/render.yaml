@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: Workspace_back
+    runtime: python
+    root: Point_Chauffeur 
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn Point_Chauffeur.wsgi:application
+    envVars:
+      - key: SECRET_KEY
+        value: @s!n31y!ypaixc^7tqtcc$t#ubf-h4%tc6^*%sv1meq$01-+yu
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
