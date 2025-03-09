@@ -108,6 +108,8 @@ WSGI_APPLICATION = 'Point_Chauffeur.wsgi.application'
 #         'ssl_require': True,
 #     }
 # }
+import os
+
 
 DATABASES = {
     'default': {
