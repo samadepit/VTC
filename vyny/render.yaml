@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: Workspace_back
+    name: VTC
     runtime: python
     root: Point_Chauffeur 
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
