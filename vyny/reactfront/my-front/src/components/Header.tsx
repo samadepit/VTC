@@ -10,7 +10,7 @@ export const Header = () => {
 
   const handleLogout = async (e) => {
     e.preventDefault();
-    const reponse = await fetch("http://127.0.0.1:8000/logout/", {
+    const reponse = await fetch("https://vtc-bjny.onrender.com/logout/", {
       method: "POST",
       headers: {
         Authorization: "Bearer " + token_admin,

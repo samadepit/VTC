@@ -43,7 +43,7 @@ const ListeChauffeurRecette = () => {
   useEffect(() => {
     const loadChauffeur = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/all-chauffeur/');
+        const response = await fetch('https://vtc-bjny.onrender.com/all-chauffeur/');
         //  
         if (response.ok) {
           const data = await response.json();
@@ -60,7 +60,7 @@ const ListeChauffeurRecette = () => {
 
     const loadRecette = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/all-recette/');
+        const response = await fetch('https://vtc-bjny.onrender.com/all-recette/');
         if (response.ok) {
           const data = await response.json();
           setRecipes(data);
@@ -80,7 +80,7 @@ const ListeChauffeurRecette = () => {
   // Handlers pour les utilisateurs
   const handleUpdateUser = async (id: string, data: any) => {
     try {
-      const response = await fetch(`https://dc05-102-212-190-42.ngrok-free.app/update-chauffeur/${id}/`, {
+      const response = await fetch(`https://vtc-bjny.onrender.com/update-chauffeur/${id}/`, {
         method: 'PUT',
 
         // body: JSON.stringify(data),
@@ -88,7 +88,7 @@ const ListeChauffeurRecette = () => {
       });
       if (response.ok) {
         await response.json();
-        const new_response = await fetch('https://dc05-102-212-190-42.ngrok-free.app/all-chauffeur/');
+        const new_response = await fetch('https://vtc-bjny.onrender.com/all-chauffeur/');
         const updatedChauffeur = await new_response.json();
         setUsers(updatedChauffeur);
         toast.success('Chauffeur mis à jour avec succès');
@@ -102,12 +102,12 @@ const ListeChauffeurRecette = () => {
 
   const handleDeleteUser = async (id: string) => {
     try {
-      const response = await fetch(`https://dc05-102-212-190-42.ngrok-free.app/delete-chauffeur/${id}/`, {
+      const response = await fetch(`https://vtc-bjny.onrender.com/delete-chauffeur/${id}/`, {
         method: 'DELETE',
       });
       if (response.ok) {
         await response.json();
-        const new_response = await fetch('https://dc05-102-212-190-42.ngrok-free.app/all-chauffeur/');
+        const new_response = await fetch('https://vtc-bjny.onrender.com/all-chauffeur/');
         const updatedChauffeur = await new_response.json();
         setUsers(updatedChauffeur);
         toast.success('Chauffeur supprimé avec succès');
@@ -121,7 +121,7 @@ const ListeChauffeurRecette = () => {
   // Handlers pour les recettes
   const handleUpdateRecipe = async (id: string, data: any) => {
     try {
-      const response = await fetch(`https://dc05-102-212-190-42.ngrok-free.app/update-recette/${id}/`, {
+      const response = await fetch(`https://vtc-bjny.onrender.com/update-recette/${id}/`, {
         method: 'PUT',
 
         // body: JSON.stringify(data),
@@ -129,7 +129,7 @@ const ListeChauffeurRecette = () => {
       });
       if (response.ok) {
         await response.json();
-        const new_response = await fetch('https://dc05-102-212-190-42.ngrok-free.app/all-recette/');
+        const new_response = await fetch('https://vtc-bjny.onrender.com/all-recette/');
         const updatedRecette = await new_response.json();
         setRecipes(updatedRecette);
         toast.success('Recette mise à jour avec succès');
@@ -143,12 +143,12 @@ const ListeChauffeurRecette = () => {
   // const handleDeleteRecipe = async (d: string) => {}
   const handleDeleteRecipe = async (id: string) => {
     try {
-      const response = await fetch(`https://dc05-102-212-190-42.ngrok-free.app/delete-recette/${id}/`, {
+      const response = await fetch(`https://vtc-bjny.onrender.com/delete-recette/${id}/`, {
         method: 'DELETE',
       });
       if (response.ok) {
         await response.json();
-        const new_response = await fetch('https://dc05-102-212-190-42.ngrok-free.app/all-recette/');
+        const new_response = await fetch('https://vtc-bjny.onrender.com/all-recette/');
         const updatedRecette = await new_response.json();
         setRecipes(updatedRecette);
         toast.success('Recette supprimée avec succès');

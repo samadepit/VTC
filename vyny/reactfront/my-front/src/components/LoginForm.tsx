@@ -16,7 +16,7 @@ export const LoginForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     setIsButtonloading(true)
     e.preventDefault();
-    const reponse = await fetch("https://dc05-102-212-190-42.ngrok-free.app/verifier-code/", {
+    const reponse = await fetch("https://vtc-bjny.onrender.com/verifier-code/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

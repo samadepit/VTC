@@ -9,7 +9,7 @@ export const CodeGenerator = () => {
     const generateCode = async (e) => {
         setIsButtonloading(true)
         e.preventDefault();
-        const reponse = await fetch("https://dc05-102-212-190-42.ngrok-free.app/generer-code/", {
+        const reponse = await fetch("https://vtc-bjny.onrender.com/generer-code/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

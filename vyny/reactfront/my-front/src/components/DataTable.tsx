@@ -59,16 +59,16 @@ export const DataTable = ({
   return (
     <div className="w-full">
       <div className="rounded-md border animate-fade-in overflow-x-auto">
-      <Table className="min-w-max"><TableHeader><TableRow>
+      <Table className="min-w-full"><TableHeader><TableRow>
           {columns.map((column) => (
             <TableHead
               key={column.accessor}
-              className="whitespace-nowrap px-4"
+              className="whitespace-nowrap px-2 py-2 bg-gray-100 text-left sticky top-0"
             >
               {column.header}
             </TableHead>
           ))}
-          <TableHead className="whitespace-nowrap px-4">Actions</TableHead>
+          <TableHead className="whitespace-nowrap px-2 py-2 bg-gray-100 text-left sticky top-0">Actions</TableHead>
         </TableRow></TableHeader><TableBody>
           {data.map((item, index) => (
             <TableRow

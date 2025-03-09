@@ -12,7 +12,7 @@ export const AdminLoginForm = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         setIsButtonloading(true)
         e.preventDefault();
-        const reponse = await fetch("http://127.0.0.1:8000/login/", {
+        const reponse = await fetch("https://vtc-bjny.onrender.com/login/", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
