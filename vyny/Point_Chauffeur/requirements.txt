@@ -8,3 +8,4 @@ pymysql
 jet_django
 facenet_pytorch
 scikit-learn
+gunicorn
