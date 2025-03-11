@@ -37,20 +37,38 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-mtcnn = MTCNN(device=device, keep_all=True, min_face_size=20)
-resnet = InceptionResnetV1(pretrained='vggface2', classify=False).eval().to(device)
-print("MTCNN and ResNet initialized at startup")
+mtcnn = None
+resnet = None
+print(f'Running on {device}')
+
+def get_mtcnn():
+    global mtcnn
+    if mtcnn is None:
+        print("Initializing MTCNN...")
+        mtcnn = MTCNN(device=device, keep_all=True)
+    return mtcnn
+
+# Fonction pour obtenir ou initialiser ResNet
+def get_resnet():
+    global resnet
+    if resnet is None:
+        print("Initializing ResNet...")
+        resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+    return resnet
+
 
 def generate_emb(file):
     try:
         img = Image.open(file)
         if img.mode != "RGB":
             img = img.convert("RGB")
-        x_aligned, prob = mtcnn(img, return_prob=True)
+        mtcnn_instance = get_mtcnn()
+        x_aligned, prob = mtcnn_instance(img, return_prob=True)
         if prob is None or len(prob) != 1 or prob[0] < 0.9:
             print("Face detection failed or low confidence.")
             return None
-        e = resnet(torch.Tensor(x_aligned[0]).unsqueeze(0).to(device)).detach().cpu().numpy()
+        resnet_instance = get_resnet()
+        e = resnet_instance(torch.Tensor(x_aligned[0]).unsqueeze(0).to(device)).detach().cpu().numpy()
         return e / np.linalg.norm(e)  # Normalized embedding
     except Exception as e:
         print(f"Error in generate_emb: {e}")
