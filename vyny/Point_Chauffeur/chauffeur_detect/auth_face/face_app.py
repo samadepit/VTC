@@ -45,7 +45,7 @@ def get_mtcnn():
     global mtcnn
     if mtcnn is None:
         print("Initializing MTCNN...")
-        mtcnn = MTCNN(device=device, keep_all=True)
+        mtcnn = MTCNN(device=device, keep_all=True, min_face_size=20)
     return mtcnn
 
 # Fonction pour obtenir ou initialiser ResNet
@@ -53,7 +53,7 @@ def get_resnet():
     global resnet
     if resnet is None:
         print("Initializing ResNet...")
-        resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+        resnet = InceptionResnetV1(pretrained='vggface2', classify=False).eval().to(device)
     return resnet
 
 
